@@ -2,7 +2,7 @@
 
 **Alignment Does Not Compose: Governed Execution Forests for Agent Swarms.**
 
-An experiment built on two published packages, [pollard](https://pypi.org/project/pollard/) (governed semantic execution trees for framework-independent AI agent control and replay) and [epicormic](https://pypi.org/project/epicormic/) (provider drift detection and containment for pollard-governed systems).
+An experiment built on two published packages, [pollard](https://pypi.org/project/pollard/) (governed semantic execution trees for framework-independent AI agent control and replay) and [epicormic](https://pypi.org/project/epicormic/) (provider drift detection and containment for pollard-governed systems). Both packages are preexisting work, published before this sprint and used unmodified; the swarm layer in this repository is the sprint's work.
 
 Thesis: per-agent governance does not compose to swarm-level safety. Each agent in the swarm runs as an individually governed pollard execution tree, yet the swarm still fails collectively through a delegation cascade that no single agent's budget or policy can see. The fix is also at the execution layer: treat the swarm as a forest, make every delegation edge a governed action in the delegator's tree, account against one shared budget pool, and watch swarm telemetry with a sequential drift layer that can freeze a drifting agent and close the delegation gate swarm-wide.
 
