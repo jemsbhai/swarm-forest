@@ -1,4 +1,5 @@
 # swarm-forest
+Video walkthrough (4 min, narrated): https://youtu.be/6ashWBPD0LM
 
 **Alignment Does Not Compose: Governed Execution Forests for Agent Swarms.**
 
