@@ -1,0 +1,22 @@
+flowchart TB
+    subgraph Forest["Forest of five pollard execution trees"]
+        TA["atlas run (coordinator and entry point)<br/>model_call nodes, delegate tool_call nodes, refusal nodes"]
+        TG["gale run<br/>model_call nodes, delegate tool_call nodes, refusal nodes"]
+        TB["birch run<br/>model_call nodes, delegate tool_call nodes, refusal nodes"]
+        TC["cedar run<br/>model_call nodes, delegate tool_call nodes, refusal nodes"]
+        TD["dune run<br/>model_call nodes, delegate tool_call nodes, refusal nodes"]
+    end
+    Gate["Delegation gate (pollard Policy)<br/>evaluates every delegate action"]
+    Pool[("SharedBudget pool<br/>300 credits, sub-allocation 100 per run<br/>transactional SQLite store")]
+    TA -->|"delegate edge: governed tool_call node<br/>in the delegator tree, carrying target agent,<br/>child item, and delegation depth"| Gate
+    TG -->|"delegate edge"| Gate
+    TB -->|"delegate edge"| Gate
+    TC -->|"delegate edge"| Gate
+    TD -->|"delegate edge"| Gate
+    Gate -->|"approved: child item dispatched<br/>to the delegatee tree"| Forest
+    Gate -->|"denied: refusal recorded as a node<br/>in the delegator tree"| Forest
+    TA -->|"every charge settles<br/>against the pool"| Pool
+    TG -->|"charges"| Pool
+    TB -->|"charges"| Pool
+    TC -->|"charges"| Pool
+    TD -->|"charges"| Pool

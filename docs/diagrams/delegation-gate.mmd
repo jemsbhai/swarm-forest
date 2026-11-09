@@ -1,0 +1,15 @@
+flowchart TD
+    Start["delegate action requested<br/>(tool_call on the delegator run)"] --> Q1{"agent frozen?"}
+    Q1 -->|yes| Refuse["Refusal recorded as a node<br/>in the delegator tree"]
+    Q1 -->|no| Q2{"spawn limit reached?"}
+    Q2 -->|yes| Refuse
+    Q2 -->|no| Q3{"depth over max 2?"}
+    Q3 -->|yes| Refuse
+    Q3 -->|no| Q4{"depth at max 2?"}
+    Q4 -->|"yes: confirmation required"| Conf["Driver approves only while the pool<br/>retains at least 25 percent of capacity"]
+    Conf -->|approved| Q5{"budget precheck: pool and<br/>sub-allocation both fit?"}
+    Conf -->|not approved| Refuse
+    Q4 -->|no| Q5
+    Q5 -->|no| Refuse
+    Q5 -->|yes| Dispatch["Delegation dispatched:<br/>child item assigned to the delegatee"]
+    Refuse --> Local["Delegator works the item locally, covering<br/>sub-items that were never dispatched"]

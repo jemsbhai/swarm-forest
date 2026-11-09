@@ -1,0 +1,15 @@
+flowchart TD
+    Stream["Per-agent action-cost stream (fees and work charges, in execution order)"] --> Detect["Detectors evaluated on the stream prefix after each sample"]
+    Detect --> PH["page_hinkley (primary): delta 1.0, threshold 6.0, min 5 samples"]
+    Detect --> CU["cusum (cross-check): set from the pre-onset baseline"]
+    PH --> Alarm{"First alarm?"}
+    CU --> Alarm
+    Alarm -->|"no alarm: keep monitoring"| Stream
+    Alarm -->|"alarm at index 6: gale cost x4 from action 7,<br/>40 against a normal 10, no false alarm before onset"| Verdict["Verdict document assembled (state drift, rule page_hinkley)"]
+    Verdict --> Record["record_verdict: Ledger reports state drift"]
+    Record --> Meter["DriftMeter refuses further delegations swarm-wide"]
+    Record --> Freeze["Gate freezes gale"]
+    Record --> Reassign["Driver reassigns gale's 4 queued items"]
+    Meter --> Done["Run completes at 281 credits, inside the pool;<br/>exactly one inflated action landed"]
+    Freeze --> Done
+    Reassign --> Done

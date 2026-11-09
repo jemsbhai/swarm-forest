@@ -22,7 +22,50 @@ The experiment isolates this failure with deterministic agents. Determinism is a
 
 **Delegation gate.** A pollard `Policy` implementation evaluates every `delegate` call with swarm-level state: delegations from frozen agents are denied; delegations beyond a per-agent spawn limit are denied; delegations creating an edge deeper than the maximum depth (2 in the experiment) are denied; delegations creating an edge exactly at the maximum depth require confirmation under pollard's approval flow. The driver acts as approver and confirms only while the pool retains at least 25 percent of its capacity. A split whose delegation is refused is abandoned: the delegator works the item locally, and sub-items never dispatched are covered by that local work.
 
+```mermaid
+flowchart TB
+    subgraph Forest["Forest of five pollard execution trees"]
+        TA["atlas run (coordinator and entry point)<br/>model_call nodes, delegate tool_call nodes, refusal nodes"]
+        TG["gale run<br/>model_call nodes, delegate tool_call nodes, refusal nodes"]
+        TB["birch run<br/>model_call nodes, delegate tool_call nodes, refusal nodes"]
+        TC["cedar run<br/>model_call nodes, delegate tool_call nodes, refusal nodes"]
+        TD["dune run<br/>model_call nodes, delegate tool_call nodes, refusal nodes"]
+    end
+    Gate["Delegation gate (pollard Policy)<br/>evaluates every delegate action"]
+    Pool[("SharedBudget pool<br/>300 credits, sub-allocation 100 per run<br/>transactional SQLite store")]
+    TA -->|"delegate edge: governed tool_call node<br/>in the delegator tree, carrying target agent,<br/>child item, and delegation depth"| Gate
+    TG -->|"delegate edge"| Gate
+    TB -->|"delegate edge"| Gate
+    TC -->|"delegate edge"| Gate
+    TD -->|"delegate edge"| Gate
+    Gate -->|"approved: child item dispatched<br/>to the delegatee tree"| Forest
+    Gate -->|"denied: refusal recorded as a node<br/>in the delegator tree"| Forest
+    TA -->|"every charge settles<br/>against the pool"| Pool
+    TG -->|"charges"| Pool
+    TB -->|"charges"| Pool
+    TC -->|"charges"| Pool
+    TD -->|"charges"| Pool
+```
+
 **Drift layer.** The drift condition adds a monitor over the watched agent's executed action costs, in execution order (delegation fees and work charges). Detection uses epicormic's sequential detectors, `page_hinkley` as the primary rule and `cusum` as a cross-check, evaluated on the stream prefix after each new sample. On the first Page-Hinkley alarm the swarm layer assembles an epicormic verdict document from the detectors' output (state `drift`, rule `page_hinkley`, both sequential states) and records it through epicormic's `record_verdict`, so the verdict sits in the monitor chain and the epicormic `Ledger` reports state `drift`. Two containment levers then act. epicormic's `DriftMeter`, registered on the runtime for tool calls, refuses every further delegation swarm-wide while the ledger state is `drift`. The delegation gate freezes the drifting agent, and the driver reassigns its queued items to other agents.
+
+```mermaid
+flowchart TD
+    Stream["Per-agent action-cost stream (fees and work charges, in execution order)"] --> Detect["Detectors evaluated on the stream prefix after each sample"]
+    Detect --> PH["page_hinkley (primary): delta 1.0, threshold 6.0, min 5 samples"]
+    Detect --> CU["cusum (cross-check): set from the pre-onset baseline"]
+    PH --> Alarm{"First alarm?"}
+    CU --> Alarm
+    Alarm -->|"no alarm: keep monitoring"| Stream
+    Alarm -->|"alarm at index 6: gale cost x4 from action 7,<br/>40 against a normal 10, no false alarm before onset"| Verdict["Verdict document assembled (state drift, rule page_hinkley)"]
+    Verdict --> Record["record_verdict: Ledger reports state drift"]
+    Record --> Meter["DriftMeter refuses further delegations swarm-wide"]
+    Record --> Freeze["Gate freezes gale"]
+    Record --> Reassign["Driver reassigns gale's 4 queued items"]
+    Meter --> Done["Run completes at 281 credits, inside the pool;<br/>exactly one inflated action landed"]
+    Freeze --> Done
+    Reassign --> Done
+```
 
 **What calls which API.** pollard provides the runtime, trees, registry, policy and confirmation flow, budget scopes including the shared pool, the meter protocol, `recompute_charges`, `verify`, and replay. epicormic provides the two sequential detectors, the verdict and ledger machinery (`Monitor`, `Verdict`, `record_verdict`, `Ledger`), and the `DriftMeter` lever. The swarm layer implements the agents and task economy, the assignment rule, the gate's rule set as a pollard policy, the approver rule, the refused-split fallback, the forest recorder and its trace digest, the drift stream, and the verdict document assembly. Two available primitives were deliberately not used. pollard's team delegation helpers bind sub-runs under a team runtime; here the edge had to be a governed node in the delegator's own tree, which the registered-action route expresses directly. epicormic's probe panel and scorer pipeline sample model endpoints; the monitored stream here is swarm telemetry, not probe responses, so the verdict document is assembled from the sequential detectors and recorded through the same ledger path, with the vacuous subjective-logic opinion because no panel opinion is computed. epicormic's `DriftPolicy` and `ContractGate` levers were not used.
 
