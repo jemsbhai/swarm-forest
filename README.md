@@ -37,21 +37,32 @@ flowchart TB
 The delegation gate that every `delegate` action passes through:
 
 ```mermaid
+%%{init: {'layout': 'dagre', 'flowchart': {'rankSpacing': 10, 'nodeSpacing': 22, 'padding': 4, 'wrappingWidth': 420}}}%%
 flowchart TD
-    Start["delegate action requested<br/>(tool_call on the delegator run)"] --> Q1{"agent frozen?"}
-    Q1 -->|yes| Refuse["Refusal recorded as a node<br/>in the delegator tree"]
-    Q1 -->|no| Q2{"spawn limit reached?"}
-    Q2 -->|yes| Refuse
-    Q2 -->|no| Q3{"depth over max 2?"}
-    Q3 -->|yes| Refuse
-    Q3 -->|no| Q4{"depth at max 2?"}
-    Q4 -->|"yes: confirmation required"| Conf["Driver approves only while the pool<br/>retains at least 25 percent of capacity"]
-    Conf -->|approved| Q5{"budget precheck: pool and<br/>sub-allocation both fit?"}
+    Start["delegate action requested<br/>(tool_call on the delegator run)"]
+    C1(["agent frozen?"])
+    C2(["spawn limit reached?"])
+    C3(["depth over max 2?"])
+    C4(["depth at max 2?"])
+    Conf["confirmation required: driver approves only<br/>while the pool retains 25 percent of capacity"]
+    C5(["budget precheck passes?<br/>pool 300, sub-allocation 100"])
+    Dispatch["delegation dispatched<br/>child item assigned to the delegatee"]
+    Refuse["refusal recorded as a node<br/>in the delegator tree"]
+    Local["delegator works the item locally, covering<br/>sub-items that were never dispatched"]
+    Start --> C1
+    C1 -->|no| C2
+    C1 -->|yes| Refuse
+    C2 -->|no| C3
+    C2 -->|yes| Refuse
+    C3 -->|no| C4
+    C3 -->|yes| Refuse
+    C4 -->|yes| Conf
+    C4 -->|no| C5
+    Conf -->|approved| C5
     Conf -->|not approved| Refuse
-    Q4 -->|no| Q5
-    Q5 -->|no| Refuse
-    Q5 -->|yes| Dispatch["Delegation dispatched:<br/>child item assigned to the delegatee"]
-    Refuse --> Local["Delegator works the item locally, covering<br/>sub-items that were never dispatched"]
+    C5 -->|yes| Dispatch
+    C5 -->|no| Refuse
+    Refuse --> Local
 ```
 
 ## Layout
