@@ -1,0 +1,5 @@
+pollard==1.6.2
+epicormic==0.2.0
+
+[test]
+pytest>=8

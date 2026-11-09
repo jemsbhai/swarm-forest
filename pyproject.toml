@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "swarm-forest"
+version = "0.1.0"
+description = "Governed execution forests for agent swarms: a non-composition experiment built on pollard and epicormic."
+requires-python = ">=3.11"
+dependencies = ["pollard==1.6.2", "epicormic==0.2.0"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: swarm-forest
+Version: 0.1.0
+Summary: Governed execution forests for agent swarms: a non-composition experiment built on pollard and epicormic.
+Requires-Python: >=3.11
+Requires-Dist: pollard==1.6.2
+Requires-Dist: epicormic==0.2.0
+Provides-Extra: test
+Requires-Dist: pytest>=8; extra == "test"
